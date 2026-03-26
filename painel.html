@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel da Empresa</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins', sans-serif;
+}
+
+body{
+background: linear-gradient(135deg,#0c4a6e,#2563eb);
+min-height:100vh;
+}
+
+.header{
+background: rgba(255,255,255,0.1);
+backdrop-filter: blur(10px);
+padding:20px 40px;
+display:flex;
+align-items:center;
+color:white;
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.logo img{
+width:45px;
+height:45px;
+border-radius:50%;
+}
+
+.container{
+max-width:1000px;
+margin:40px auto;
+background:white;
+padding:30px;
+border-radius:16px;
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+}
+
+h1{
+text-align:center;
+color:#0c4a6e;
+margin-bottom:10px;
+}
+
+.card{
+background:#f8fafc;
+padding:20px;
+margin-top:20px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+border:1px solid #e2e8f0;
+transition:0.3s;
+}
+
+.card:hover{
+transform:translateY(-3px);
+}
+
+.pergunta{
+font-weight:600;
+margin-bottom:10px;
+color:#0f172a;
+}
+
+.barra{
+height:20px;
+border-radius:10px;
+background:#e5e7eb;
+overflow:hidden;
+margin-top:5px;
+}
+
+.progresso{
+height:100%;
+transition:0.5s;
+border-radius:10px;
+}
+
+.valor{
+margin-top:8px;
+font-size:14px;
+color:#475569;
+}
+
+.resultado{
+margin-bottom:10px;
+font-size:14px;
+color:#334155;
+}
+
+.voltar{
+margin-top:30px;
+text-align:center;
+}
+
+button{
+background: linear-gradient(135deg,#2563eb,#1d4ed8);
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+.nivelBox{
+margin-top:10px;
+padding:10px;
+border-radius:10px;
+background:#f1f5f9;
+text-align:center;
+font-size:18px;
+}
+
+.footer{
+text-align:center;
+color:white;
+margin-top:20px;
+font-size:14px;
+opacity:0.8;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+  <div class="logo">
+    <img src="https://cdn-icons-png.flaticon.com/512/2920/2920329.png">
+    <span>Clínica Do Trabalho</span>
+  </div>
+</div>
+
+<div class="container">
+
+<h1 id="tituloEmpresa"></h1>
+
+<div id="relatorio"></div>
+
+<div class="voltar">
+  <button onclick="voltar()">⬅ Voltar</button>
+</div>
+
+</div>
+
+<div class="footer">
+© 2026 Clínica Do Trabalho • Sistema de Relatórios
+</div>
+
+<script>
+
+function normalizar(txt){
+  return txt
+    .toLowerCase()
+    .trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+let params = new URLSearchParams(window.location.search);
+let chave = params.get("empresa");
+
+let dados = JSON.parse(localStorage.getItem("respostas")) || {};
+let empresa = dados[chave];
+
+let titulo = document.getElementById("tituloEmpresa");
+let relatorio = document.getElementById("relatorio");
+
+if(!empresa){
+  titulo.innerText = "Empresa não encontrada";
+}else{
+
+  titulo.innerText = empresa.nome;
+
+  let respostas = empresa.respostas;
+
+  const classificacao = {
+    "frequentemente, sinto que tenho muito trabalho para fazer.": {
+      "sempre": "ruim", "as vezes": "medio", "raramente": "bom"
+    },
+    "tenho prazos razoaveis para cumprir minhas tarefas.": {
+      "sempre": "bom", "as vezes": "medio", "raramente": "ruim"
+    },
+    "tenho liberdade para decidir como realizar minhas tarefas.": {
+      "sempre": "bom", "as vezes": "medio", "raramente": "ruim"
+    },
+    "sinto que ha pressao psicologica nas atividades que realizo.": {
+      "sempre": "ruim", "as vezes": "medio", "raramente": "bom"
+    },
+    "meu trabalho interfere negativamente na minha vida familiar.": {
+      "sempre": "ruim", "as vezes": "medio", "raramente": "bom"
+    }
+  };
+
+  let contagem = {};
+
+  respostas.forEach(r => {
+    for(let pergunta in r){
+
+      if(pergunta === "empresa") continue;
+
+      let perguntaNorm = normalizar(pergunta);
+      let valorNorm = normalizar(r[pergunta]);
+
+      if(!contagem[perguntaNorm]){
+        contagem[perguntaNorm] = {
+          original: pergunta,
+          respostas: {}
+        };
+      }
+
+      if(!contagem[perguntaNorm].respostas[valorNorm]){
+        contagem[perguntaNorm].respostas[valorNorm] = 0;
+      }
+
+      contagem[perguntaNorm].respostas[valorNorm]++;
+    }
+  });
+
+  let pontuacao = 0;
+  let totalPerguntas = 0;
+
+  for(let chavePergunta in contagem){
+
+    let dadosPergunta = contagem[chavePergunta];
+    let respostasObj = dadosPergunta.respostas;
+
+    let card = document.createElement("div");
+    card.className = "card";
+
+    let total = Object.values(respostasObj).reduce((a,b)=>a+b,0);
+
+    totalPerguntas++;
+
+    let respostaPrincipal = Object.keys(respostasObj)
+      .reduce((a,b)=> respostasObj[a] > respostasObj[b] ? a : b);
+
+    let tipo = classificacao[chavePergunta]?.[respostaPrincipal];
+
+    if(tipo === "ruim") pontuacao += 2;
+    else if(tipo === "medio") pontuacao += 1;
+
+    let html = `
+      <div class="pergunta">${dadosPergunta.original}</div>
+      <div class="resultado">
+        Resultado principal: <b>${respostaPrincipal}</b>
+      </div>
+    `;
+
+    for(let resposta in respostasObj){
+
+      let quantidade = respostasObj[resposta];
+      let porcentagem = Math.round((quantidade/total)*100);
+
+      let cor = "#2563eb";
+
+      if(tipo === "ruim") cor = "#dc2626";
+      else if(tipo === "medio") cor = "#f59e0b";
+      else if(tipo === "bom") cor = "#16a34a";
+
+      html += `
+        <div class="valor">${resposta} (${porcentagem}%)</div>
+        <div class="barra">
+          <div class="progresso" style="width:${porcentagem}%; background:${cor}"></div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = html;
+    relatorio.appendChild(card);
+  }
+
+  let nivel = "Baixo";
+
+  let media = pontuacao / totalPerguntas;
+
+  if(media >= 1.3){
+    nivel = "Alto";
+  }else if(media >= 0.6){
+    nivel = "Médio";
+  }
+
+  let nivelDiv = document.createElement("div");
+  nivelDiv.className = "nivelBox";
+
+  let corNivel = "#16a34a";
+  if(nivel === "Médio") corNivel = "#f59e0b";
+  if(nivel === "Alto") corNivel = "#dc2626";
+
+  nivelDiv.innerHTML = `
+    Nível de Risco: <b style="color:${corNivel}">${nivel}</b>
+  `;
+
+  titulo.appendChild(nivelDiv);
+}
+
+function voltar(){
+
+  let params = new URLSearchParams(window.location.search);
+  let empresa = params.get("empresa");
+
+  window.location.href = "cargos.html?empresa=" + encodeURIComponent(empresa);
+}
+
+</script>
+
+</body>
+</html>

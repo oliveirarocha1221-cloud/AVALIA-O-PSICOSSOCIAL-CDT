@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empresas</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins', sans-serif;
+}
+
+body{
+background: linear-gradient(135deg,#0c4a6e,#2563eb);
+min-height:100vh;
+}
+
+/* SPLASH */
+#splash{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background: linear-gradient(135deg,#0c4a6e,#2563eb);
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:9999;
+animation: fadeOut 1.5s ease forwards;
+animation-delay: 3s;
+}
+
+.splash-content{
+text-align:center;
+color:white;
+animation: zoomIn 2s ease;
+}
+
+.splash-content img{
+width:140px;
+max-width:100%;
+margin-bottom:20px;
+border-radius:0;
+object-fit:contain;
+}
+
+.splash-content h2{
+font-size:36px;
+font-weight:600;
+letter-spacing:1px;
+}
+
+.splash-content p{
+font-size:18px;
+opacity:0.85;
+margin-top:5px;
+}
+
+@keyframes zoomIn{
+from{
+transform:scale(0.7);
+opacity:0;
+}
+to{
+transform:scale(1);
+opacity:1;
+}
+}
+
+@keyframes fadeOut{
+to{
+opacity:0;
+visibility:hidden;
+}
+}
+
+/* HEADER */
+.header{
+background: rgba(255,255,255,0.1);
+backdrop-filter: blur(10px);
+padding:20px 40px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+color:white;
+}
+
+.logo{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.logo img{
+width:55px;
+height:auto;
+border-radius:0;
+object-fit:contain;
+}
+
+.logo span{
+font-size:20px;
+font-weight:600;
+}
+
+.container{
+max-width:1000px;
+margin:40px auto;
+background:white;
+padding:30px;
+border-radius:16px;
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+color:#0c4a6e;
+}
+
+input{
+width:100%;
+padding:14px;
+border-radius:10px;
+border:1px solid #ddd;
+font-size:16px;
+margin-bottom:20px;
+transition:0.3s;
+}
+
+input:focus{
+border-color:#2563eb;
+outline:none;
+box-shadow:0 0 5px rgba(37,99,235,0.4);
+}
+
+.card{
+background:#f8fafc;
+padding:20px;
+margin-top:15px;
+border-radius:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+transition:0.3s;
+border:1px solid #e2e8f0;
+}
+
+.card:hover{
+transform:translateY(-3px);
+box-shadow:0 10px 20px rgba(0,0,0,0.1);
+}
+
+.nome{
+font-size:18px;
+font-weight:600;
+color:#0f172a;
+}
+
+.respostas{
+color:#64748b;
+font-size:14px;
+}
+
+button{
+background: linear-gradient(135deg,#2563eb,#1d4ed8);
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+cursor:pointer;
+font-weight:500;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+.vazio{
+text-align:center;
+padding:30px;
+color:#64748b;
+}
+
+.footer{
+text-align:center;
+color:white;
+margin-top:20px;
+font-size:14px;
+opacity:0.8;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-content">
+    <img src="Logo assinatura (5).png">
+    <h2>Bem-vindo</h2>
+    <p>Clínica do Trabalho</p>
+  </div>
+</div>
+
+<div class="header">
+  <div class="logo">
+    <img src="Logo assinatura (5).png">
+    <span>Avaliação psicossocial</span>
+  </div>
+</div>
+
+<div class="container">
+
+<h1>Empresas Participantes</h1>
+
+<input type="text" id="buscaEmpresa" placeholder="🔍 Pesquisar empresa...">
+
+<div id="listaEmpresas"></div>
+
+</div>
+
+<div class="footer">
+© 2026 Clínica Do Trabalho • Sistema de Relatórios
+</div>
+
+<script>
+
+// CONTROLE DO SPLASH (APENAS NA PRIMEIRA ENTRADA)
+window.addEventListener("load", () => {
+
+  let jaViu = sessionStorage.getItem("splashExibido");
+
+  if(!jaViu){
+    sessionStorage.setItem("splashExibido", "true");
+
+    setTimeout(() => {
+      document.getElementById("splash").style.display = "none";
+    }, 4500);
+
+  } else {
+    document.getElementById("splash").style.display = "none";
+  }
+
+});
+
+function normalizarEmpresa(nome){
+  return nome
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(mercado|empresa|ltda|me|eireli|sa|s\/a|comercio|comercial)\b/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+let dados = JSON.parse(localStorage.getItem("respostasFormulario")) || [];
+
+if(Array.isArray(dados)){
+  let novoFormato = {};
+
+  dados.forEach(item => {
+
+    let nomeOriginal = item.empresa || "Sem nome";
+    let chave = normalizarEmpresa(nomeOriginal);
+
+    if(!novoFormato[chave]){
+      novoFormato[chave] = {
+        nome: nomeOriginal,
+        respostas: []
+      };
+    }
+
+    novoFormato[chave].respostas.push(item);
+  });
+
+  dados = novoFormato;
+  localStorage.setItem("respostas", JSON.stringify(dados));
+}
+
+let lista = document.getElementById("listaEmpresas");
+
+let todasEmpresas = [];
+
+for(let chave in dados){
+  let empresa = dados[chave];
+
+  todasEmpresas.push({
+    chave: chave,
+    nome: empresa.nome,
+    total: empresa.respostas.length
+  });
+}
+
+function renderizar(empresas){
+
+  lista.innerHTML = "";
+
+  if(empresas.length === 0){
+    lista.innerHTML = "<div class='vazio'>Nenhuma empresa encontrada.</div>";
+    return;
+  }
+
+  empresas.forEach(empresa => {
+
+    let card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+    <div>
+      <div class="nome">${empresa.nome}</div>
+      <div class="respostas">${empresa.total} respostas</div>
+    </div>
+
+    <button onclick="abrirEmpresa('${empresa.chave}')">
+      Ver Relatório
+    </button>
+    `;
+
+    lista.appendChild(card);
+
+  });
+}
+
+renderizar(todasEmpresas);
+
+document.getElementById("buscaEmpresa").addEventListener("input", function(){
+
+  let termo = normalizarEmpresa(this.value);
+
+  let filtradas = todasEmpresas.filter(emp => 
+    normalizarEmpresa(emp.nome).includes(termo)
+  );
+
+  renderizar(filtradas);
+
+});
+
+function abrirEmpresa(chave){
+  window.location.href = "cargos.html?empresa=" + encodeURIComponent(chave);
+}
+
+</script>
+
+</body>
+</html>
